@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comfort Food - Pixel Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @font-face {
+            font-family: 'Pixel';
+            src: local('Courier New'), local('monospace');
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: linear-gradient(135deg, #87CEEB 0%, #FF6347 100%);
+            animation: breathe 8s ease-in-out infinite;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        @keyframes breathe {
+            0%, 100% {
+                background: linear-gradient(135deg, #87CEEB 0%, #FF6347 100%);
+            }
+            50% {
+                background: linear-gradient(135deg, #FF6347 0%, #87CEEB 100%);
+            }
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-section {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-btn {
+            background: #FFD700;
+            border: 4px solid #8B4513;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #8B4513;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 
+                4px 4px 0px #8B4513,
+                inset -2px -2px 0px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+            image-rendering: pixelated;
+        }
+
+        .upload-btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 
+                2px 2px 0px #8B4513,
+                inset -2px -2px 0px rgba(0,0,0,0.2);
+        }
+
+        .upload-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 
+                0px 0px 0px #8B4513,
+                inset 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .food-name-input {
+            background: #FFFFFF;
+            border: 3px solid #8B4513;
+            padding: 8px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #8B4513;
+            width: 200px;
+            text-align: center;
+            image-rendering: pixelated;
+        }
+
+        .food-name-input::placeholder {
+            color: #999;
+        }
+
+        .bubble {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 6px solid #8B4513;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 
+                0 0 0 4px #FFD700,
+                0 8px 0px #8B4513,
+                0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            image-rendering: pixelated;
+        }
+
+        .bubble:hover {
+            transform: scale(1.05);
+        }
+
+        .bubble-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .bubble-placeholder {
+            font-size: 20px;
+            color: #8B4513;
+            font-weight: bold;
+            text-align: center;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: #8B4513;
+            font-weight: bold;
+            text-transform: uppercase;
+            z-index: 15;
+        }
+
+        .message {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #8B4513;
+            opacity: 0.8;
+            text-align: center;
+            transition: opacity 0.5s ease-in-out;
+            white-space: nowrap;
+            z-index: 5;
+            font-weight: bold;
+            text-shadow: 
+                2px 2px 0px #FFD700,
+                4px 4px 0px rgba(0,0,0,0.2);
+        }
+
+        .message.fade-out {
+            opacity: 0;
+        }
+
+        .message.fade-in {
+            opacity: 0.8;
+        }
+
+        .emoji-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 32px;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            image-rendering: pixelated;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.8);
+            }
+        }
+
+        @keyframes spring {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .bubble.spring {
+            animation: spring 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .error-message {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FF6347;
+            border: 4px solid #8B4513;
+            padding: 12px 24px;
+            color: #FFFFFF;
+            font-weight: bold;
+            z-index: 25;
+            text-transform: uppercase;
+            box-shadow: 0 4px 0px #8B4513;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) translateX(0); }
+            25% { transform: translateX(-50%) translateX(-10px); }
+            75% { transform: translateX(-50%) translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-section">
+            <button class="upload-btn" id="uploadBtn">上传食物图片</button>
+            <input type="file" id="fileInput" accept="image/*">
+            <input type="text" class="food-name-input" id="foodNameInput" placeholder="食物名称 (可选)">
+        </div>
+
+        <div class="bubble" id="bubble">
+            <div class="bubble-placeholder" id="bubblePlaceholder">点击上传</div>
+            <img class="bubble-image" id="bubbleImage" style="display: none;" alt="Food">
+            <div class="loading" id="loading" style="display: none;">生成中...</div>
+        </div>
+
+        <div class="message" id="message">这顿饭已经变成你的能量了</div>
+        <div class="emoji-container" id="emojiContainer"></div>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://zazkdvxafbzynygkfpqv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_8zgqVioqwkK2zzrSrhoOVQ_4cghDTVD';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // LLM API Configuration
+        const LLM_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+        const LLM_API_KEY = 'e28e9edf467b4a5eb2f221952bbc658d.kCuD3OkT1kf1jcqO';
+        const LLM_MODEL = 'glm-4.7';
+
+        // DOM Elements
+        const bubble = document.getElementById('bubble');
+        const bubblePlaceholder = document.getElementById('bubblePlaceholder');
+        const bubbleImage = document.getElementById('bubbleImage');
+        const message = document.getElementById('message');
+        const emojiContainer = document.getElementById('emojiContainer');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInput = document.getElementById('fileInput');
+        const foodNameInput = document.getElementById('foodNameInput');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+
+        const messages = [
+            '这顿饭已经变成你的能量了',
+            '没关系的，听听身体的声音',
+            '每一口都值得被温柔对待'
+        ];
+
+        const emojis = ['🍃', '🌕', '✨'];
+
+        let currentRadius = 80;
+        let currentMessageIndex = 0;
+        let currentFoodName = '';
+        let currentAnimationUrl = '';
+
+        // Initialize bubble size
+        function updateBubbleSize() {
+            bubble.style.width = (currentRadius * 2) + 'px';
+            bubble.style.height = (currentRadius * 2) + 'px';
+        }
+
+        // Show error message
+        function showError(text) {
+            errorMessage.textContent = text;
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 3000);
+        }
+
+        // Convert image to base64
+        function imageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Call LLM API to generate animated image
+        async function generateAnimatedImage(imageBase64, foodName) {
+            try {
+                loading.style.display = 'block';
+                bubblePlaceholder.style.display = 'none';
+
+                const prompt = foodName 
+                    ? `请为这个${foodName}图片生成一个像素风格的动画GIF图片URL。图片应该是8-bit像素风格，适合在圆形框架中显示，有简单的动画效果（比如轻微摆动、闪烁或旋转）。直接返回图片的URL，不要其他文字。`
+                    : `请为这个食物图片生成一个像素风格的动画GIF图片URL。图片应该是8-bit像素风格，适合在圆形框架中显示，有简单的动画效果（比如轻微摆动、闪烁或旋转）。直接返回图片的URL，不要其他文字。`;
+
+                const response = await fetch(LLM_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${LLM_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: LLM_MODEL,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一个有用的AI助手。请直接返回图片URL，不要其他解释文字。'
+                            },
+                            {
+                                role: 'user',
+                                content: `这是食物图片的base64数据: ${imageBase64.substring(0, 500)}...\n\n${prompt}`
+                            }
+                        ],
+                        temperature: 1,
+                        stream: false,
+                        thinking: {
+                            type: 'enabled',
+                            clear_thinking: true
+                        },
+                        do_sample: true,
+                        top_p: 0.95,
+                        tool_stream: false,
+                        response_format: {
+                            type: 'text'
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let imageUrl = '';
+
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const content = data.choices[0].message.content.trim();
+                    // Extract URL from response
+                    const urlMatch = content.match(/https?:\/\/[^\s]+/);
+                    if (urlMatch) {
+                        imageUrl = urlMatch[0];
+                    } else {
+                        // If no URL found, try to use content as URL or use a placeholder
+                        imageUrl = content.startsWith('http') ? content : imageBase64;
+                    }
+                } else {
+                    throw new Error('API响应格式错误');
+                }
+
+                // If we got a valid URL, use it; otherwise use the original image
+                if (imageUrl && imageUrl.startsWith('http')) {
+                    currentAnimationUrl = imageUrl;
+                    bubbleImage.src = imageUrl;
+                    bubbleImage.style.display = 'block';
+                } else {
+                    // Fallback to original image
+                    bubbleImage.src = imageBase64;
+                    bubbleImage.style.display = 'block';
+                    currentAnimationUrl = imageBase64;
+                }
+
+                loading.style.display = 'none';
+
+                // Save to database
+                await saveToDatabase(foodName || '未命名食物', imageUrl || imageBase64);
+
+                return imageUrl || imageBase64;
+            } catch (error) {
+                console.error('生成动画图片失败:', error);
+                loading.style.display = 'none';
+                bubblePlaceholder.style.display = 'block';
+                showError('生成失败: ' + error.message);
+                throw error;
+            }
+        }
+
+        // Save to Supabase database
+        async function saveToDatabase(foodName, animationUrl) {
+            try {
+                const { data, error } = await supabase
+                    .from('comfort_foods')
+                    .insert([
+                        {
+                            food_name: foodName,
+                            animation_url: animationUrl,
+                            created_at: new Date().toISOString()
+                        }
+                    ]);
+
+                if (error) {
+                    console.error('保存到数据库失败:', error);
+                    // Don't show error to user, just log it
+                } else {
+                    console.log('已保存到数据库:', data);
+                }
+            } catch (error) {
+                console.error('数据库操作错误:', error);
+            }
+        }
+
+        // Handle file upload
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showError('请上传图片文件');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showError('图片大小不能超过5MB');
+                return;
+            }
+
+            try {
+                const imageBase64 = await imageToBase64(file);
+                currentFoodName = foodNameInput.value.trim() || '未命名食物';
+
+                // Show preview first
+                bubbleImage.src = imageBase64;
+                bubbleImage.style.display = 'block';
+                bubblePlaceholder.style.display = 'none';
+
+                // Generate animated image
+                await generateAnimatedImage(imageBase64, currentFoodName);
+            } catch (error) {
+                console.error('处理图片失败:', error);
+                showError('处理图片失败');
+            }
+        });
+
+        // Create floating emoji
+        function createFloatingEmoji(x, y) {
+            const emoji = document.createElement('div');
+            emoji.className = 'floating-emoji';
+            emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+            const offsetX = (Math.random() - 0.5) * 40;
+            emoji.style.left = (x + offsetX) + 'px';
+            emoji.style.top = (y - 20) + 'px';
+
+            emojiContainer.appendChild(emoji);
+
+            setTimeout(() => {
+                emoji.remove();
+            }, 1500);
+        }
+
+        // Switch to next message with fade transition
+        function switchMessage() {
+            message.classList.add('fade-out');
+
+            setTimeout(() => {
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * messages.length);
+                } while (newIndex === currentMessageIndex && messages.length > 1);
+
+                currentMessageIndex = newIndex;
+                message.textContent = messages[currentMessageIndex];
+                message.classList.remove('fade-out');
+                message.classList.add('fade-in');
+
+                setTimeout(() => {
+                    message.classList.remove('fade-in');
+                }, 50);
+            }, 250);
+        }
+
+        // Handle bubble click
+        bubble.addEventListener('click', function(e) {
+            // Only allow interaction if image is loaded
+            if (bubbleImage.style.display === 'none') {
+                return;
+            }
+
+            const clickX = e.clientX;
+            const clickY = e.clientY;
+
+            // Increase bubble size permanently
+            currentRadius += 8;
+            updateBubbleSize();
+
+            // Trigger spring animation
+            bubble.classList.add('spring');
+            setTimeout(() => {
+                bubble.classList.remove('spring');
+            }, 300);
+
+            // Create floating emoji
+            createFloatingEmoji(clickX, clickY);
+
+            // Switch message
+            switchMessage();
+        });
+
+        // Initialize
+        updateBubbleSize();
+    </script>
+</body>
+</html>
